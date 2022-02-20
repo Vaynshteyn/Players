@@ -4,8 +4,7 @@ package com.vaynshteyn.Players.controllers;
 import com.vaynshteyn.Players.DAO.PlayerRepository;
 import com.vaynshteyn.Players.models.Player;
 import com.vaynshteyn.Players.parsers.CsvParser;
-import com.vaynshteyn.Players.utils.AutoUpdater;
-import com.vaynshteyn.Players.utils.ListComparingUtils;
+import com.vaynshteyn.Players.utils.ListCustomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -27,16 +26,24 @@ public class PlayerController {
         try {
             var newPlayers = CsvParser.parseToList();
             var oldPlayers = getAll().getBody();
-            var playersForSaving = ListComparingUtils.getPlayersForSaving(newPlayers, oldPlayers);
-            var playersForDeleting = ListComparingUtils.getPlayersForDeleting(newPlayers, oldPlayers);
-            playerRepository.saveAll(playersForSaving);
-            playerRepository.deleteAll(playersForDeleting);
+            if (!ListCustomUtils.isListNullOrEmpty(newPlayers) && !ListCustomUtils.isListNullOrEmpty(oldPlayers)) {
+                var playersForSaving = ListCustomUtils.getElementsExistingOnlyInFirstList(newPlayers, oldPlayers);
+                if (!ListCustomUtils.isListNullOrEmpty(playersForSaving)) {
+                    playerRepository.saveAll(playersForSaving);
+                }
+                //I'm not sure, do we need to save deleting from csv position, but I added it
+                var playersForDeleting = ListCustomUtils.getElementsExistingOnlyInFirstList(oldPlayers, newPlayers);
+                if (!ListCustomUtils.isListNullOrEmpty(playersForDeleting)) {
+                    playerRepository.deleteAll(playersForDeleting);
+                }
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.OK).body(String.format("Player update failed:%n%s", e.getMessage()));
         }
         return ResponseEntity.status(HttpStatus.OK).body("Players updated");
     }
+
     @GetMapping("all")
     public ResponseEntity<List<Player>> getAll() {
         var players = playerRepository.findAll();

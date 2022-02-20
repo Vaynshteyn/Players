@@ -2,8 +2,9 @@ package com.vaynshteyn.Players.models;
 
 import com.opencsv.bean.CsvBindByName;
 
-import javax.persistence.*;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "players")
